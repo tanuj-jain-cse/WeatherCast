@@ -1,0 +1,187 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body, html {
+  height: 100%;
+  font-family: 'Poppins', sans-serif;
+  overflow-x: hidden;
+  background: linear-gradient(to bottom, #000000, #010c21);
+}
+
+/* Globe container */
+#earth-container {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  transition: all 1s ease-in-out;
+  z-index: 0;
+}
+#earth-container.moved {
+  left: 25%;
+  transform: translate(-50%, -50%) scale(0.7);
+}
+@keyframes floatEarth {
+  0% { transform: translate(-50%, -50%) scale(0.7) translateY(0px); }
+  50% { transform: translate(-50%, -50%) scale(0.7) translateY(-10px); }
+  100% { transform: translate(-50%, -50%) scale(0.7) translateY(0px); }
+}
+#earth-container.floating {
+  animation: floatEarth 4s ease-in-out infinite;
+}
+
+/* Navbar */
+nav {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  padding: 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+nav h1 { color: #34b0d9; font-size: 1.8rem; font-weight: 700; }
+nav .nav-buttons a {
+  margin-left: 20px; padding: 10px 18px; border-radius: 8px;
+  text-decoration: none; font-weight: 600; color: #fff;
+  background: rgba(8, 49, 57, 0.85); transition: all 0.3s ease;
+}
+nav .nav-buttons a:hover {
+  background: rgb(12, 100, 117);
+  box-shadow: 0 0 12px rgba(0,212,255,0.7);
+}
+
+/* Hero */
+.hero {
+  position: relative; height: 100vh;
+  display: flex; justify-content: center; align-items: center;
+  text-align: center; padding: 20px;
+}
+.hero .card {
+  background: rgba(13,27,42,0.65);
+  backdrop-filter: blur(2px);
+  padding: 10px 30px;
+  border-radius: 20px;
+  max-width: 700px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  color: #05021f;
+  transition: opacity 0.8s ease-in-out;
+}
+.hero .card.hidden {
+  opacity: 0; pointer-events: none;
+}
+.hero .card h2 {
+  font-size: 2.5rem; margin-bottom: 20px; color: #32c6e3;
+}
+.hero .card p {
+  font-size: 1.2rem; line-height: 1.6; margin-bottom: 30px; color: #cce7ff;
+}
+/* Explore button (inside hero card) */
+.hero .card button.explore-btn {
+  padding: 15px 40px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 30px;
+  background: linear-gradient(135deg, #00d4ff, #007bff);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hero .card button.explore-btn:hover {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  transform: scale(1.08);
+  box-shadow: 0 0 18px rgba(0, 212, 255, 0.8);
+}
+
+
+/* Why choose */
+.why-choose {
+  text-align: center;
+  padding: 50px 20px;
+  background: #0d1b2a;
+  color: #fff;
+}
+.section-title {
+  font-size: 2rem;
+  margin-bottom: 40px;
+  font-weight: bold;
+}
+.section-title span {
+  color: #00d4ff;
+}
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 25px;
+}
+.feature-card {
+  background: #1b263b;
+  padding: 20px;
+  border-radius: 15px;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.feature-card h3 {
+  color: #00d4ff;
+  margin-bottom: 10px;
+}
+.feature-card p {
+  font-size: 0.9rem;
+  color: #ccc;
+}
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 212, 255, 0.3);
+}
+
+/* Info section */
+#info-section {
+  position: absolute;
+  right: 10%;
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: 1000px;
+  background: rgba(13,27,42,0.65);
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+  display: none;
+}
+#info-section.visible { opacity: 1; }
+#info-section h2 {
+  color: #2caac4; margin-bottom: 20px;
+}
+#info-section ul {
+  list-style: none; padding: 0; margin-bottom: 20px;
+}
+#info-section ul li {
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+#info-section button {
+  padding: 10px 80px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 10px;
+  background: #00d4ff;
+  color: #0d1b2a;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+#info-section button:hover {
+  background: #00b2e6;
+  box-shadow: 0 0 15px #00d4ff;
+}
+
+@media(max-width: 768px){
+  nav { padding: 15px 25px; }
+  .hero .card { padding: 30px 25px; }
+  .hero .card h2 { font-size: 2rem; }
+  .hero .card p { font-size: 1rem; }
+  .hero .card button { padding: 12px 30px; font-size: 1rem; }
+}

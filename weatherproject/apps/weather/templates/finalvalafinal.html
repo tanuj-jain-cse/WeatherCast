@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEATHERME - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html {
+            height: 100%;
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+            background: linear-gradient(to bottom, #000000, #010c21);
+            color: #fff;
+            transition: background 0.3s ease;
+        }
+
+        body.light-mode {
+            background: linear-gradient(to bottom, #a1c4fd, #c2e9fb);
+            color: #0d1b2a;
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(13, 27, 42, 0.85);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 1430px;
+            margin-bottom: 15px;
+        }
+
+        .logo-greeting-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #34b0d9;
+        }
+
+        .user-greeting {
+            font-size: 1rem;
+            color: #cce7ff;
+        }
+
+        .light-mode .user-greeting {
+            color: rgb(13, 28, 42);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* CSV Export Button */
+        .csv-export-btn {
+            background: #00d4ff;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            color: #0d1b2a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .csv-export-btn:hover {
+            background: #0d6efd;
+            color: white;
+        }
+
+        /* Search Bar */
+        .search-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 50%;
+            max-width: 580px;
+        }
+
+        .search-bar {
+            padding: 10px 15px;
+            padding-right: 40px;
+            border-radius: 25px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            width: 100%;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .light-mode .search-bar {
+            background: rgba(255, 255, 255, 0.8);
+            color: #0d1b2a;
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #00d4ff;
+            cursor: pointer;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            width: 50px;
+            height: 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+        }
+
+        .theme-toggle span {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #00d4ff;
+            position: absolute;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle.light span {
+            transform: translateX(25px);
+            background: #ffc107;
+        }
+
+        /* Thought Container */
+        .thought-container {
+            text-align: center;
+            padding: 15px;
+            margin: 10px 40px;
+            background: rgba(13, 27, 42, 0.65);
+            border-radius: 15px;
+            font-style: italic;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .light-mode .thought-container {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .thought-container p {
+            padding: 0 100px;
+        }
+        
+        .thought-controls {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .voice-over-btn, .new-thought-btn {
+            background: #00d4ff;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: #0d1b2a;
+            font-weight: 600;
+        }
+
+        /* Current Weather */
+        .current-weather {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 40px;
+            gap: 15px;
+        }
+
+        .weather-card {
+            background: rgba(13, 27, 42, 0.65);
+            border-radius: 15px;
+            padding: 20px;
+            flex: 1;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .light-mode .weather-card {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .weather-card h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .light-mode .weather-card h3 {
+            color: #0d6efd;
+        }
+
+        .weather-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .light-mode .weather-detail {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .main-weather {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .temperature {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+
+        .weather-desc {
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+
+        .weather-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+
+        .location {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        /* Forecast Section */
+        .forecast {
+            padding: 20px 40px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #00d4ff;
+        }
+
+        .light-mode .section-title {
+            color: #0d6efd;
+        }
+
+        .forecast-cards {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .forecast-card {
+            background: rgba(13, 27, 42, 0.65);
+            border-radius: 15px;
+            padding: 15px;
+            min-width: 140px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .light-mode .forecast-card {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .forecast-day {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #00d4ff;
+        }
+
+        .light-mode .forecast-day {
+            color: #0d6efd;
+        }
+
+        .forecast-icon {
+            font-size: 2.5rem;
+            margin: 10px 0;
+        }
+
+        .forecast-temp {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .forecast-desc {
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        /* Map and Charts Section */
+        .map-charts {
+            display: flex;
+            padding: 20px 40px;
+            gap: 20px;
+        }
+
+        .map-container {
+            flex: 2;
+            height: 500px;
+            background: rgba(13, 27, 42, 0.65);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .light-mode .map-container {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .map-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 1000;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+
+        .map-btn {
+            padding: 8px 12px;
+            background: #00d4ff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #0d1b2a;
+            font-size: 0.9rem;
+        }
+
+        .map-btn.active {
+            background: #0d6efd;
+            color: white;
+        }
+        
+        .map-info-box {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(13, 27, 42, 0.85);
+            backdrop-filter: blur(5px);
+            padding: 12px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            z-index: 1000;
+            max-width: 300px;
+            min-height: 50px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+        }
+
+        .light-mode .map-info-box {
+            background: rgba(255, 255, 255, 0.7);
+            color: #0d1b2a;
+        }
+
+        .charts-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chart {
+            background: rgba(13, 27, 42, 0.65);
+            border-radius: 15px;
+            padding: 15px;
+            height: 240px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .light-mode .chart {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Precaution Section */
+        .precautions {
+            padding: 20px 40px;
+        }
+
+        .precaution-cards {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .precaution-card {
+            background: rgba(13, 27, 42, 0.65);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 250px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .light-mode .precaution-card {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .precaution-card h4 {
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+
+        .precaution-card p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* CSV Modal */
+        .csv-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .csv-modal-content {
+            background: rgba(13, 27, 42, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .light-mode .csv-modal-content {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .csv-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .csv-modal-title {
+            font-size: 1.5rem;
+            color: #00d4ff;
+        }
+
+        .light-mode .csv-modal-title {
+            color: #0d6efd;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .csv-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .csv-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .csv-option input {
+            width: 20px;
+            height: 20px;
+        }
+
+        .csv-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+
+        .csv-modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+        }
+
+        .csv-download-btn {
+            background: #00d4ff;
+            color: #0d1b2a;
+        }
+
+        .csv-cancel-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .light-mode .csv-cancel-btn {
+            background: rgba(0, 0, 0, 0.1);
+            color: #0d1b2a;
+        }
+
+        /* Map Canvas */
+        #map {
+            height: 100%;
+            width: 100%;
+            background-color: #eee;
+        }
+
+        /* Air Quality Labels */
+        .aqi-good { color: #28a745; }
+        .aqi-fair { color: #ffc107; }
+        .aqi-moderate { color: #fd7e14; }
+        .aqi-poor { color: #dc3545; }
+        .aqi-very-poor { color: #6f42c1; }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            text-align: center;
+            padding: 60px 20px;
+            margin: 20px 40px;
+            background: rgba(13, 27, 42, 0.65);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .light-mode .welcome-screen {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .welcome-screen h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #00d4ff;
+        }
+
+        .light-mode .welcome-screen h2 {
+            color: #0d6efd;
+        }
+
+        .welcome-screen p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: #cce7ff;
+        }
+
+        .light-mode .welcome-screen p {
+            color: #0d1b2a;
+        }
+
+        .welcome-icon {
+            font-size: 4rem;
+            color: #00d4ff;
+            margin-bottom: 20px;
+        }
+
+        /* Error Message */
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            margin: 20px 40px;
+            background: rgba(220, 53, 69, 0.2);
+            border-radius: 15px;
+            color: #dc3545;
+            display: none;
+        }
+
+        /* Loading Indicator */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .map-charts {
+                flex-direction: column;
+            }
+
+            .map-container {
+                height: 400px;
+            }
+
+            header {
+                padding: 15px 20px;
+            }
+
+            .search-container {
+                width: 70%;
+            }
+        }
+
+        @media (max-width: 992px) {
+            header {
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .user-greeting {
+                order: 3;
+                width: 100%;
+                text-align: center;
+                margin: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .current-weather {
+                flex-wrap: wrap;
+                gap: 15px;
+                padding: 20px;
+            }
+
+            .weather-card {
+                width: 100%;
+            }
+
+            .forecast-cards, .precaution-cards {
+                flex-direction: column;
+            }
+
+            .map-charts, .forecast, .precautions {
+                padding: 20px;
+            }
+
+            .search-bar {
+                width: 250px;
+            }
+
+            .map-controls {
+                max-width: 90%;
+            }
+            .thought-container p {
+                padding: 0 10px;
+            }
+            .thought-controls {
+                position: static;
+                transform: none;
+                margin-top: 10px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .header-controls {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .search-container {
+                width: 100%;
+            }
+
+            .search-bar {
+                width: 100%;
+            }
+
+            .theme-toggle {
+                align-self: flex-end;
+            }
+
+            .csv-modal-content {
+                padding: 20px;
+            }
+
+            .csv-modal-footer {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <div class="logo-greeting-container">
+                <div class="logo">WEATHERME</div>
+                <div class="user-greeting" id="user-greeting">Hello User</div>
+            </div>
+            <div class="header-controls">
+                <button class="csv-export-btn" id="csv-export-btn">
+                    <i class="fas fa-file-csv"></i> Export CSV
+                </button>
+                <button class="theme-toggle" id="theme-toggle"><span></span></button>
+            </div>
+        </div>
+        <div class="search-container">
+            <input type="text" class="search-bar" id="search-input" placeholder="Search city...">
+            <button class="search-btn" id="search-button"><i class="fas fa-search"></i></button>
+        </div>
+    </header>
+
+    <!-- CSV Export Modal -->
+    <div class="csv-modal" id="csv-modal">
+        <div class="csv-modal-content">
+            <div class="csv-modal-header">
+                <h2 class="csv-modal-title">Export Weather Data</h2>
+                <button class="close-modal" id="close-modal">&times;</button>
+            </div>
+            <div class="csv-options">
+                <div class="csv-option">
+                    <input type="checkbox" id="historical-data" checked>
+                    <label for="historical-data">Include Historical Data (15 days)</label>
+                </div>
+                <div class="csv-option">
+                    <input type="checkbox" id="forecast-data" checked>
+                    <label for="forecast-data">Include Forecast Data (7 days)</label>
+                </div>
+                <div class="csv-option">
+                    <input type="checkbox" id="current-data" checked>
+                    <label for="current-data">Include Current Weather Data</label>
+                </div>
+            </div>
+            <div class="csv-modal-footer">
+                <button class="csv-modal-btn csv-cancel-btn" id="csv-cancel">Cancel</button>
+                <button class="csv-modal-btn csv-download-btn" id="csv-download">Download CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-message" id="error-message">
+        <i class="fas fa-exclamation-circle"></i>
+        <p id="error-text">City not found. Please try again.</p>
+    </div>
+
+    <!-- Welcome Screen (shown initially) -->
+    <div class="welcome-screen" id="welcome-screen">
+        <div class="welcome-icon">
+            <i class="fas fa-cloud-sun"></i>
+        </div>
+        <h2>Welcome to WeatherMe</h2>
+        <p>Enter a city name above to get started with weather information</p>
+        <p>Search for any city worldwide to view current conditions, forecasts, and more</p>
+    </div>
+
+    <!-- Weather Content (hidden initially) -->
+    <div id="weather-content" style="display: none;">
+        <div class="thought-container">
+            <p id="thought-text"></p>
+            <div class="thought-controls">
+                <button class="new-thought-btn" id="new-thought-btn">New Thought</button>
+                <button class="voice-over-btn" id="voice-over-btn"><i class="fas fa-volume-up"></i> Voice Over</button>
+            </div>
+        </div>
+
+        <div class="current-weather">
+            <div class="weather-card main-weather">
+                <div class="location" id="location"></div>
+                <div class="weather-icon" id="weather-icon"></div>
+                <div class="temperature" id="temperature"></div>
+                <div class="weather-desc" id="weather-desc"></div>
+            </div>
+
+            <div class="weather-card">
+                <h3>Details</h3>
+                <div class="weather-detail">
+                    <span>Humidity</span>
+                    <span id="humidity"></span>
+                </div>
+                <div class="weather-detail">
+                    <span>Wind</span>
+                    <span id="wind"></span>
+                </div>
+                <div class="weather-detail">
+                    <span>Pressure</span>
+                    <span id="pressure"></span>
+                </div>
+                <div class="weather-detail">
+                    <span>Feels Like</span>
+                    <span id="feels-like"></span>
+                </div>
+            </div>
+
+            <div class="weather-card">
+                <h3>Today</h3>
+                <div class="weather-detail">
+                    <span>Sunrise</span>
+                    <span id="sunrise"></span>
+                </div>
+                <div class="weather-detail">
+                    <span>Sunset</span>
+                    <span id="sunset"></span>
+                </div>
+                <div class="weather-detail">
+                    <span>UV Index</span>
+                    <span id="uv-index"></span>
+                </div>
+                <div class="weather-detail">
+                    <span>Visibility</span>
+                    <span id="visibility"></span>
+                </div>
+            </div>
+
+            <div class="weather-card">
+                <h3>Air Quality</h3>
+                <div class="weather-detail">
+                    <span>AQI</span>
+                    <span id="aqi-value"></span>
+                </div>
+                <div class="weather-detail">
+                    <span>PM2.5</span>
+                    <span id="pm25"></span>
+                </div>
+                <div class="weather-detail">
+                    <span>PM10</span>
+                    <span id="pm10"></span>
+                </div>
+                <div class="weather-detail">
+                    <span>Status</span>
+                    <span id="aqi-status"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="forecast">
+            <h2 class="section-title">7-Day Forecast</h2>
+            <div class="forecast-cards" id="forecast-cards">
+                <!-- Forecast cards will be generated here -->
+            </div>
+        </div>
+
+        <div class="map-charts">
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="map-info-box" id="map-info-box">Select a map mode to learn more!</div>
+                <div class="map-controls">
+                    <button class="map-btn active" data-layer="standard">Standard</button>
+                    <button class="map-btn" data-layer="satellite">Satellite</button>
+                    <button class="map-btn" data-layer="terrain">Terrain</button>
+                    <button class="map-btn" data-layer="dark">Dark</button>
+                    <button class="map-btn" data-layer="biking">Biking</button>
+                    <button class="map-btn" data-layer="usgs_topo">USGS Topo</button>
+                    <button class="map-btn" data-layer="osm_hot">OSM HOT</button>
+                    <button class="map-btn" data-layer="cartodb_voyager">CartoDB Voyager</button>
+                    <button class="map-btn" data-layer="esri_streets">ESRI Streets</button>
+                    <button class="map-btn" data-layer="esri_topo">ESRI Topo</button>
+                </div>
+            </div>
+
+            <div class="charts-container">
+                <div class="chart">
+                    <canvas id="temperature-chart"></canvas>
+                </div>
+                <div class="chart">
+                    <canvas id="precipitation-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="precautions">
+            <h2 class="section-title">Precaution Predictions</h2>
+            <div class="precaution-cards" id="precaution-cards">
+                <!-- Precaution cards will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Store map instance and marker globally
+        let map;
+        let currentMarker;
+        let currentBaseLayer;
+        let currentLocation = null;
+        let forecastData = [];
+        let tempChart, precipChart;
+        let mapLayers = {};
+
+        // Weather condition to precaution mapping
+        const weatherPrecautions = {
+            'Clear': [
+                { alert: 'High UV Index', advice: 'Apply sunscreen with SPF 30+, wear protective clothing, and limit sun exposure during peak hours (10am-4pm).' },
+                { alert: 'Heat Advisory', advice: 'Stay hydrated, avoid strenuous outdoor activities, and wear light-colored, loose-fitting clothing.' },
+                { alert: 'Dehydration Risk', advice: 'Drink plenty of water throughout the day, even if you don\'t feel thirsty.' }
+            ],
+            'Clouds': [
+                { alert: 'Variable Conditions', advice: 'Be prepared for changing weather conditions throughout the day.' },
+                { alert: 'Reduced Visibility', advice: 'Use caution when driving as cloud cover may reduce visibility in some areas.' },
+                { alert: 'Temperature Fluctuations', advice: 'Dress in layers to adapt to changing temperatures throughout the day.' }
+            ],
+            'Rain': [
+                { alert: 'Heavy Rain Expected', advice: 'Carry an umbrella and avoid waterlogged areas. Stay indoors if possible.' },
+                { alert: 'Slippery Roads', advice: 'Drive carefully and allow extra stopping distance. Watch for hydroplaning.' },
+                { alert: 'Flood Risk', advice: 'Avoid low-lying areas and never drive through flooded roads.' }
+            ],
+            'Drizzle': [
+                { alert: 'Light Rain', advice: 'Carry a light umbrella or rain jacket. Roads may be slippery.' },
+                { alert: 'Reduced Visibility', advice: 'Use headlights when driving and allow extra following distance.' },
+                { alert: 'Humidity Increase', advice: 'Be aware of increased humidity which may affect respiratory conditions.' }
+            ],
+            'Thunderstorm': [
+                { alert: 'Thunderstorm Warning', advice: 'Seek shelter indoors immediately. Avoid open areas, tall objects, and metal objects.' },
+                { alert: 'Lightning Risk', advice: 'Stay away from windows and avoid using electrical appliances during the storm.' },
+                { alert: 'Potential Hail', advice: 'Protect vehicles and stay indoors until the storm passes.' }
+            ],
+            'Snow': [
+                { alert: 'Snowfall Expected', advice: 'Dress in warm layers, wear boots with good traction, and limit outdoor exposure.' },
+                { alert: 'Icy Conditions', advice: 'Use extreme caution when walking or driving. Surfaces may be slippery.' },
+                { alert: 'Reduced Visibility', advice: 'Drive with low-beam headlights and increase following distance significantly.' }
+            ],
+            'Mist': [
+                { alert: 'Reduced Visibility', advice: 'Use low-beam headlights when driving and allow extra travel time.' },
+                { alert: 'Slippery Conditions', advice: 'Be cautious on roads and walkways as mist can create slippery surfaces.' },
+                { alert: 'Respiratory Caution', advice: 'Those with respiratory issues should limit outdoor exposure.' }
+            ],
+            'Smoke': [
+                { alert: 'Poor Air Quality', advice: 'Limit outdoor activities, especially if you have respiratory conditions. Keep windows closed.' },
+                { alert: 'Reduced Visibility', advice: 'Drive with caution using low-beam headlights. Allow extra stopping distance.' },
+                { alert: 'Health Advisory', advice: 'Wear an N95 mask if you need to go outside for extended periods.' }
+            ],
+            'Haze': [
+                { alert: 'Reduced Air Quality', advice: 'Sensitive groups should limit prolonged outdoor exertion.' },
+                { alert: 'Visibility Issues', advice: 'Use caution when driving and allow extra following distance.' },
+                { alert: 'Health Precautions', advice: 'Those with respiratory issues may experience discomfort.' }
+            ],
+            'Dust': [
+                { alert: 'Dust Advisory', advice: 'Close windows and doors. Use air purifiers if available.' },
+                { alert: 'Respiratory Protection', advice: 'Wear a mask when outdoors, especially if you have respiratory conditions.' },
+                { alert: 'Visibility Warning', advice: 'Drive with extreme caution as dust can significantly reduce visibility.' }
+            ],
+            'Fog': [
+                { alert: 'Dense Fog Advisory', advice: 'Drive with low-beam headlights and reduce speed. Allow extra travel time.' },
+                { alert: 'Limited Visibility', advice: 'Avoid unnecessary travel. If driving, use fog lights if available.' },
+                { alert: 'Navigation Caution', advice: 'Be extra cautious at intersections and use GPS if available.' }
+            ],
+            'Sand': [
+                { alert: 'Sandstorm Warning', advice: 'Stay indoors and keep windows and doors closed. Wear protective gear if outside.' },
+                { alert: 'Respiratory Protection', advice: 'Use masks or damp cloths to cover nose and mouth if outside.' },
+                { alert: 'Visibility Hazard', advice: 'Avoid driving as sand can severely reduce visibility and damage vehicles.' }
+            ],
+            'Ash': [
+                { alert: 'Ash Fall Advisory', advice: 'Stay indoors with windows and doors closed. Use damp cloths to seal gaps.' },
+                { alert: 'Respiratory Emergency', advice: 'Wear N95 masks or respirators if outside. Those with respiratory conditions should take extra precautions.' },
+                { alert: 'Infrastructure Impact', advice: 'Avoid driving as ash can make roads slippery and damage vehicles.' }
+            ],
+            'Squall': [
+                { alert: 'Sudden Wind Gusts', advice: 'Secure outdoor objects and avoid being outside during squalls.' },
+                { alert: 'Marine Warning', advice: 'Boaters should seek safe harbor immediately. Conditions can change rapidly.' },
+                { alert: 'Driving Hazard', advice: 'Be prepared for sudden strong crosswinds, especially on open roads and bridges.' }
+            ],
+            'Tornado': [
+                { alert: 'Tornado Warning', advice: 'Seek shelter immediately in a basement or interior room on the lowest floor. Avoid windows.' },
+                { alert: 'Emergency Preparedness', advice: 'Have a emergency kit ready with water, food, medications, and important documents.' },
+                { alert: 'Evacuation Readiness', advice: 'Know your community\'s warning system and evacuation routes.' }
+            ],
+            'Wind': [
+                { alert: 'Strong Wind Advisory', advice: 'Secure loose outdoor objects. Be cautious when driving high-profile vehicles.' },
+                { alert: 'Falling Branch Risk', advice: 'Avoid parking or standing under trees. Be aware of potential falling debris.' },
+                { alert: 'Wind Chill Effect', advice: 'Dress in layers as wind can make temperatures feel significantly colder.' }
+            ]
+        };
+
+        // Air quality index mapping
+        const aqiLevels = {
+            1: { label: 'Good', class: 'aqi-good', description: 'Air quality is satisfactory, and air pollution poses little or no risk.' },
+            2: { label: 'Fair', class: 'aqi-fair', description: 'Air quality is acceptable. However, there may be a risk for some people.' },
+            3: { label: 'Moderate', class: 'aqi-moderate', description: 'Members of sensitive groups may experience health effects.' },
+            4: { label: 'Poor', class: 'aqi-poor', description: 'Everyone may begin to experience health effects.' },
+            5: { label: 'Very Poor', class: 'aqi-very-poor', description: 'Health warning of emergency conditions.' }
+        };
+
+        // Spiritual Quotes
+        const spiritualQuotes = {
+            'Clear': [
+                "The sun shines not on us, but in us.",
+                "In the presence of the sun, all shadows vanish.",
+                "Just like the sun, we too can rise and shine, bringing warmth to those around us.",
+            ],
+            'Clouds': [
+                "Clouds are the mind's thoughts; just let them pass.",
+                "Behind every cloud, the sun is still shining. Keep your faith, even in the darkest moments.",
+                "The clouds are not a sign of darkness, but a canvas for the wind to paint upon.",
+            ],
+            'Rain': [
+                "Just as the rain purifies the earth, tears purify the soul.",
+                "Listen to the rhythm of the rain; it is the song of the universe washing away your worries.",
+                "The rain is a blessing, reminding us that even the smallest drops of effort can create a powerful stream.",
+            ],
+            'Thunderstorm': [
+                "Monsoon is not just a season; it is a spiritual renewal for the earth and the soul.",
+                "The first monsoon rain is a divine blessing, washing away the heat and bringing forth new life.",
+                "Let the monsoon cleanse your spirit, just as it purifies the land.",
+            ]
+        };
+
+        let currentWeatherCondition = 'Clear';
+
+        function showError(message) {
+            const errorElement = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            errorText.textContent = message;
+            errorElement.style.display = 'block';
+            
+            // Hide error after 5 seconds
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+
+        function updateThought(condition) {
+            const thoughtTextElement = document.getElementById('thought-text');
+            const quotes = spiritualQuotes[condition] || spiritualQuotes['Clear'];
+            if (quotes && quotes.length > 0) {
+                const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+                thoughtTextElement.textContent = `"${randomQuote}"`;
+            } else {
+                thoughtTextElement.textContent = '"The best thing one can do when it\'s raining is to let it rain." - Henry Wadsworth Longfellow';
+            }
+        }
+        
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUser = JSON.parse(localStorage.getItem('weatherme_current_user'));
+            const userGreeting = document.getElementById('user-greeting');
+
+            if (currentUser) {
+                userGreeting.textContent = `Hello, ${currentUser.name}`;
+            } else {
+                userGreeting.textContent = 'Hello, User';
+            }
+
+            // Initialize the map but don't load any weather data
+            initializeMap();
+            
+            // CSV Export functionality
+            setupCSVExport();
+        });
+
+        document.getElementById('new-thought-btn').addEventListener('click', function() {
+            updateThought(currentWeatherCondition);
+        });
+
+        // Theme Toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        themeToggle.addEventListener('click', function() {
+            document.body.classList.toggle('light-mode');
+            themeToggle.classList.toggle('light');
+
+            // Update charts for light mode if they exist
+            if (tempChart) {
+                initializeCharts();
+            }
+        });
+
+        // Voice Over Button
+        document.getElementById('voice-over-btn').addEventListener('click', function() {
+            const thoughtText = document.getElementById('thought-text').textContent;
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(thoughtText);
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('Your browser does not support text-to-speech.');
+            }
+        });
+
+        // Search Functionality
+        const searchBar = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-button');
+
+        searchBtn.addEventListener('click', function() {
+            performSearch();
+        });
+
+        searchBar.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        function performSearch() {
+            if (searchBar.value.trim() !== '') {
+                const query = searchBar.value.trim();
+                // Show loading state
+                searchBtn.innerHTML = '<span class="loading"></span>';
+                
+                fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Reset search button
+                        searchBtn.innerHTML = '<i class="fas fa-search"></i>';
+                        
+                        if (data && data.length > 0) {
+                            const lat = parseFloat(data[0].lat);
+                            const lon = parseFloat(data[0].lon);
+                            const displayName = data[0].display_name;
+                            currentLocation = { name: displayName, lat, lon };
+                            updateWeatherData(displayName, lat, lon);
+                        } else {
+                            showError('Location not found. Please try again.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching geocoding data:', error);
+                        searchBtn.innerHTML = '<i class="fas fa-search"></i>';
+                        showError('An error occurred while searching. Please try again.');
+                    });
+            } else {
+                showError('Please enter a city name to search.');
+            }
+        }
+
+        async function updateWeatherData(location, lat, lon) {
+            // Hide welcome screen and show weather content
+            document.getElementById('welcome-screen').style.display = 'none';
+            document.getElementById('weather-content').style.display = 'block';
+            
+            document.getElementById('location').textContent = location;
+
+            const weatherData = await getWeatherData(lat, lon);
+            if (!weatherData) return;
+
+            currentWeatherCondition = weatherData.condition;
+            updateThought(currentWeatherCondition);
+
+            document.getElementById('temperature').textContent = `${weatherData.temperature}°C`;
+            document.getElementById('weather-desc').textContent = weatherData.condition;
+            document.getElementById('humidity').textContent = `${weatherData.humidity}%`;
+            document.getElementById('wind').textContent = `${weatherData.windSpeed} km/h`;
+            document.getElementById('pressure').textContent = `${weatherData.pressure} hPa`;
+            document.getElementById('feels-like').textContent = `${weatherData.feelsLike}°C`;
+            document.getElementById('sunrise').textContent = weatherData.sunrise;
+            document.getElementById('sunset').textContent = weatherData.sunset;
+            document.getElementById('uv-index').textContent = weatherData.uvIndex;
+            document.getElementById('visibility').textContent = `${weatherData.visibility} km`;
+
+            // Update air quality with dynamic values
+            const aqiValue = Math.floor(Math.random() * 5) + 1; // Random AQI between 1-5
+            const aqiInfo = aqiLevels[aqiValue];
+            document.getElementById('aqi-value').textContent = aqiValue;
+            document.getElementById('aqi-status').textContent = aqiInfo.label;
+            document.getElementById('aqi-status').className = aqiInfo.class;
+
+            const weatherIcon = document.getElementById('weather-icon');
+            updateWeatherIcon(weatherIcon, weatherData.condition);
+
+            // Get forecast data
+            await generateForecastCards(lat, lon);
+            generatePrecautionCards(currentWeatherCondition);
+            initializeCharts();
+            updateMapLocation(lat, lon, location, weatherData.temperature);
+        }
+
+        async function getWeatherData(lat, lon) {
+            const apiKey = 'cfdccbd34d11e3a78970e4d64d64f4b5'; // Replace with your actual API key
+            const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.cod !== 200) {
+                    showError('Weather data not available. Please try again.');
+                    return null;
+                }
+
+                // Map API data to your format
+                return {
+                    temperature: Math.round(data.main.temp),
+                    condition: data.weather[0].main, // e.g., "Rain", "Clouds", "Clear"
+                    humidity: data.main.humidity,
+                    windSpeed: Math.round(data.wind.speed * 3.6), // m/s to km/h
+                    pressure: data.main.pressure,
+                    feelsLike: Math.round(data.main.feels_like),
+                    uvIndex: Math.floor(Math.random() * 11), // Random UV index 0-10
+                    visibility: Math.round(data.visibility / 1000), // meters to km
+                    sunrise: new Date(data.sys.sunrise * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    sunset: new Date(data.sys.sunset * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                };
+            } catch (error) {
+                showError('Weather data error: ' + error.message);
+                return null;
+            }
+        }
+
+        function updateWeatherIcon(iconElement, condition) {
+            switch(condition) {
+                case 'Clear': iconElement.innerHTML = '<i class="fas fa-sun"></i>'; break;
+                case 'Clouds': iconElement.innerHTML = '<i class="fas fa-cloud"></i>'; break;
+                case 'Rain': iconElement.innerHTML = '<i class="fas fa-cloud-rain"></i>'; break;
+                case 'Drizzle': iconElement.innerHTML = '<i class="fas fa-cloud-rain"></i>'; break;
+                case 'Thunderstorm': iconElement.innerHTML = '<i class="fas fa-bolt"></i>'; break;
+                case 'Snow': iconElement.innerHTML = '<i class="fas fa-snowflake"></i>'; break;
+                case 'Mist': 
+                case 'Smoke': 
+                case 'Haze': 
+                case 'Dust': 
+                case 'Fog': iconElement.innerHTML = '<i class="fas fa-smog"></i>'; break;
+                case 'Sand': iconElement.innerHTML = '<i class="fas fa-cloud-meatball"></i>'; break;
+                case 'Ash': iconElement.innerHTML = '<i class="fas fa-fire"></i>'; break;
+                case 'Squall': 
+                case 'Tornado': 
+                case 'Wind': iconElement.innerHTML = '<i class="fas fa-wind"></i>'; break;
+                default: iconElement.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+        }
+
+        // Generate Forecast Cards (7 days)
+        async function generateForecastCards(lat, lon) {
+            const apiKey = 'cfdccbd34d11e3a78970e4d64d64f4b5';
+            const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+            const forecastContainer = document.getElementById('forecast-cards');
+            forecastContainer.innerHTML = '<div style="text-align:center;padding:20px;"><span class="loading"></span> Loading forecast...</div>';
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.cod !== "200") {
+                    forecastContainer.innerHTML = '<div>Error loading forecast data. Please try again.</div>';
+                    return;
+                }
+                
+                // Process the 5-day/3-hour forecast data to get daily values
+                const dailyData = processForecastData(data.list);
+                forecastData = dailyData;
+                
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                forecastContainer.innerHTML = '';
+
+                // Show 7 days forecast
+                dailyData.slice(0, 7).forEach((day, i) => {
+                    const date = new Date(day.dt * 1000);
+                    const forecastDay = days[date.getDay()];
+                    const tempHigh = Math.round(day.temp.max);
+                    const tempLow = Math.round(day.temp.min);
+                    const condition = day.weather[0].main;
+                    const iconMap = {
+                        'Clear': 'fa-sun',
+                        'Clouds': 'fa-cloud',
+                        'Rain': 'fa-cloud-rain',
+                        'Drizzle': 'fa-cloud-rain',
+                        'Thunderstorm': 'fa-bolt',
+                        'Snow': 'fa-snowflake',
+                        'Mist': 'fa-smog',
+                        'Smoke': 'fa-smog',
+                        'Haze': 'fa-smog',
+                        'Dust': 'fa-smog',
+                        'Fog': 'fa-smog',
+                        'Sand': 'fa-cloud-meatball',
+                        'Ash': 'fa-fire',
+                        'Squall': 'fa-wind',
+                        'Tornado': 'fa-wind',
+                        'Wind': 'fa-wind'
+                    };
+                    const icon = iconMap[condition] || 'fa-sun';
+
+                    const card = document.createElement('div');
+                    card.className = 'forecast-card';
+                    card.innerHTML = `
+                        <div class="forecast-day">${forecastDay}</div>
+                        <div class="forecast-icon"><i class="fas ${icon}"></i></div>
+                        <div class="forecast-temp">${tempHigh}°<span style="font-size: 1rem; opacity: 0.7;">/${tempLow}°</span></div>
+                        <div class="forecast-desc">${condition}</div>
+                    `;
+                    forecastContainer.appendChild(card);
+                });
+            } catch (error) {
+                forecastContainer.innerHTML = '<div>Error loading forecast data. Please try again.</div>';
+                console.error('Forecast error:', error);
+            }
+        }
+
+        // Process 3-hour forecast data into daily data
+        function processForecastData(forecastList) {
+            const dailyData = {};
+            
+            forecastList.forEach(item => {
+                const date = new Date(item.dt * 1000);
+                const dateKey = date.toDateString();
+                
+                if (!dailyData[dateKey]) {
+                    dailyData[dateKey] = {
+                        dt: item.dt,
+                        temp: { min: item.main.temp_min, max: item.main.temp_max },
+                        weather: [item.weather[0]],
+                        humidity: item.main.humidity,
+                        wind_speed: item.wind.speed,
+                        pressure: item.main.pressure
+                    };
+                } else {
+                    // Update min and max temperatures
+                    if (item.main.temp_min < dailyData[dateKey].temp.min) {
+                        dailyData[dateKey].temp.min = item.main.temp_min;
+                    }
+                    if (item.main.temp_max > dailyData[dateKey].temp.max) {
+                        dailyData[dateKey].temp.max = item.main.temp_max;
+                    }
+                    
+                    // Use the weather condition from the midday forecast if available
+                    const hours = date.getHours();
+                    if (hours >= 10 && hours <= 14) {
+                        dailyData[dateKey].weather = [item.weather[0]];
+                    }
+                }
+            });
+            
+            return Object.values(dailyData);
+        }
+
+        // Generate Precaution Cards based on weather condition
+        function generatePrecautionCards(condition) {
+            const precautionContainer = document.getElementById('precaution-cards');
+            precautionContainer.innerHTML = '';
+            
+            // Get precautions for the current weather condition
+            const precautions = weatherPrecautions[condition] || weatherPrecautions['Clear'];
+            
+            // Show 3-5 precautions based on the condition
+            precautions.slice(0, 5).forEach((precaution, i) => {
+                const dayName = ['Today', 'Tomorrow', 'Next Day', 'Following Day', 'Weekend'][i];
+                const card = document.createElement('div');
+                card.className = 'precaution-card';
+                card.innerHTML = `
+                    <h4>${dayName}: ${precaution.alert}</h4>
+                    <p>${precaution.advice}</p>
+                `;
+                precautionContainer.appendChild(card);
+            });
+        }
+        
+        const mapDescriptions = {
+            'standard': 'Standard map view showing roads and geographical features.',
+            'satellite': 'This map is a detailed view of Earth\'s surface from space, perfect for seeing landscapes and buildings.',
+            'terrain': 'This map highlights mountains, valleys, and other landforms, great for hiking and geographical studies.',
+            'dark': 'A sleek, dark-themed map that is easy on the eyes, especially in low light conditions.',
+            'biking': 'This map shows cycling paths and routes, designed for bikers to navigate urban and rural areas.',
+            'usgs_topo': 'A detailed topographic map from the U.S. Geological Survey, showing elevation and terrain features.',
+            'osm_hot': 'A humanitarian map used for disaster response, showing recent updates to critical infrastructure.',
+            'cartodb_voyager': 'A versatile and neutral map designed to make your data layers stand out clearly.',
+            'esri_streets': 'A classic street map that provides clear, detailed road and address information for easy navigation.',
+            'esri_topo': 'A topographic map showing elevation and contour lines, useful for outdoor and adventure planning.'
+        };
+
+        const mapInfoBox = document.getElementById('map-info-box');
+
+        // Initialize Map
+        function initializeMap() {
+            // Ensure the map container has a defined height
+            
+            
+            map = L.map('map').setView([20, 0], 2);
+            
+            // Define all available layers
+            mapLayers = {
+                // Standard OSM Layer
+                standard: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }),
+                // Satellite Layer
+                satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                }),
+                // Terrain Layer - FIXED TYPO: openttopomap -> opentopomap
+                terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                    attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
+                }),
+                // Dark Layer
+                dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomians: 'abcd'
+                }),
+                // Biking Layer
+                biking: L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+                    attribution: '<a href="https://github.com/cyclosm/cyclosm-cartocss-style/releases" title="CyclOSM - Open Bicycle render">CyclOSM</a> | Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }),
+                // USGS Topo Layer
+                usgs_topo: L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}', {
+                   attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>',
+                   maxZoom: 8
+                }),
+                // OSM HOT Layer
+                osm_hot: L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>'
+                }),
+                // CartoDB Voyager Layer
+                cartodb_voyager: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd'
+                }),
+                // ESRI Streets Layer
+                esri_streets: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
+                }),
+                // ESRI Topo Layer
+                esri_topo: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+                })
+            };
+
+            // Add the default layer
+            currentBaseLayer = mapLayers.standard;
+            currentBaseLayer.addTo(map);
+            map.invalidateSize(); 
+            // Add a welcome message to the map
+            L.popup()
+                .setLatLng([20, 0])
+                .setContent("<b>Welcome to WeatherMe</b><br>Search for a city to see weather data")
+                .openOn(map);
+
+            document.querySelectorAll('.map-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const layerType = this.getAttribute('data-layer');
+                    
+                    // Remove current base layer
+                    map.removeLayer(currentBaseLayer);
+
+                    // Add the new layer
+                    currentBaseLayer = mapLayers[layerType];
+                    currentBaseLayer.addTo(map);
+                    map.invalidateSize();
+
+                    // Reset button active state
+                    document.querySelectorAll('.map-btn').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Update the info box
+                    if (layerType in mapDescriptions) {
+                        mapInfoBox.textContent = mapDescriptions[layerType];
+                    } else {
+                        mapInfoBox.textContent = 'Select a map mode to learn more!';
+                    }
+                });
+            });
+             setTimeout(() => {
+                map.invalidateSize();
+            }, 500);
+        }
+            // Add the default layer
+            currentBaseLayer = mapLayers.standard;
+            currentBaseLayer.addTo(map);
+
+            // Add a welcome message to the map
+            L.popup()
+                .setLatLng([20, 0])
+                .setContent("<b>Welcome to WeatherMe</b><br>Search for a city to see weather data")
+                .openOn(map);
+
+            document.querySelectorAll('.map-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const layerType = this.getAttribute('data-layer');
+                    
+                    // Remove current base layer
+                    map.removeLayer(currentBaseLayer);
+
+                    // Add the new layer
+                    currentBaseLayer = mapLayers[layerType];
+                    currentBaseLayer.addTo(map);
+
+                    // Reset button active state
+                    document.querySelectorAll('.map-btn').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Update the info box
+                    if (layerType in mapDescriptions) {
+                        mapInfoBox.textContent = mapDescriptions[layerType];
+                    } else {
+                        mapInfoBox.textContent = 'Select a map mode to learn more!';
+                    }
+                });
+            });
+        
+
+        function updateMapLocation(lat, lon, locationName, temperature) {
+            if (map) {
+                map.setView([lat, lon], 12);
+                if (currentMarker) {
+                    map.removeLayer(currentMarker);
+                }
+                currentMarker = L.marker([lat, lon]).addTo(map)
+                    .bindPopup(`${locationName}<br>Temperature: ${temperature}°C`)
+                    .openPopup();
+            }
+        }
+        
+        function initializeCharts() {
+            const chartColor = document.body.classList.contains('light-mode') ? '#0d1b2a' : '#cce7ff';
+            const gridColor = document.body.classList.contains('light-mode') ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
+            const titleColor = document.body.classList.contains('light-mode') ? '#0d6efd' : '#00d4ff';
+
+            if (tempChart) tempChart.destroy();
+            const tempCtx = document.getElementById('temperature-chart').getContext('2d');
+            
+            // Use actual forecast data for the temperature chart
+            const tempData = forecastData.slice(0, 7).map(day => Math.round(day.temp.max));
+            const labels = forecastData.slice(0, 7).map(day => {
+                const date = new Date(day.dt * 1000);
+                return date.toLocaleDateString([], {weekday: 'short'});
+            });
+            
+            tempChart = new Chart(tempCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Temperature (°C)', 
+                        data: tempData,
+                        borderColor: '#00d4ff', 
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)', 
+                        tension: 0.4, 
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { 
+                            display: true, 
+                            text: '7-Day Temperature Forecast', 
+                            color: titleColor,
+                            font: { size: 14 }
+                        },
+                        legend: { 
+                            labels: { 
+                                color: chartColor,
+                                font: { size: 12 }
+                            } 
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: false, 
+                            grid: { color: gridColor }, 
+                            ticks: { color: chartColor } 
+                        },
+                        x: { 
+                            grid: { color: gridColor }, 
+                            ticks: { color: chartColor } 
+                        }
+                    }
+                }
+            });
+
+            if (precipChart) precipChart.destroy();
+            const precipCtx = document.getElementById('precipitation-chart').getContext('2d');
+            
+            // Generate precipitation data based on weather conditions
+            const precipData = forecastData.slice(0, 7).map(day => {
+                const condition = day.weather[0].main;
+                // Assign precipitation probability based on weather condition
+                if (condition === 'Rain' || condition === 'Thunderstorm') return Math.floor(Math.random() * 30) + 70; // 70-100%
+                if (condition === 'Drizzle') return Math.floor(Math.random() * 30) + 40; // 40-70%
+                if (condition === 'Snow') return Math.floor(Math.random() * 20) + 30; // 30-50%
+                if (condition === 'Clouds') return Math.floor(Math.random() * 20) + 10; // 10-30%
+                return Math.floor(Math.random() * 10); // 0-10% for clear weather
+            });
+            
+            precipChart = new Chart(precipCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Precipitation Chance (%)', 
+                        data: precipData,
+                        backgroundColor: 'rgba(0, 212, 255, 0.5)', 
+                        borderColor: '#00d4ff', 
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { 
+                            display: true, 
+                            text: 'Precipitation Probability', 
+                            color: titleColor,
+                            font: { size: 14 }
+                        },
+                        legend: { 
+                            labels: { 
+                                color: chartColor,
+                                font: { size: 12 }
+                            } 
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            max: 100, 
+                            grid: { color: gridColor }, 
+                            ticks: { color: chartColor } 
+                        },
+                        x: { 
+                            grid: { color: gridColor }, 
+                            ticks: { color: chartColor } 
+                        }
+                    }
+                }
+            });
+        }
+
+        // CSV Export Functionality
+        function setupCSVExport() {
+            const csvExportBtn = document.getElementById('csv-export-btn');
+            const csvModal = document.getElementById('csv-modal');
+            const closeModal = document.getElementById('close-modal');
+            const csvCancel = document.getElementById('csv-cancel');
+            const csvDownload = document.getElementById('csv-download');
+
+            // Open modal
+            csvExportBtn.addEventListener('click', function() {
+                if (!currentLocation) {
+                    showError('Please search for a city first to export data.');
+                    return;
+                }
+                csvModal.style.display = 'flex';
+            });
+
+            // Close modal
+            closeModal.addEventListener('click', function() {
+                csvModal.style.display = 'none';
+            });
+
+            csvCancel.addEventListener('click', function() {
+                csvModal.style.display = 'none';
+            });
+
+            // Download CSV
+            csvDownload.addEventListener('click', function() {
+                const includeHistorical = document.getElementById('historical-data').checked;
+                const includeForecast = document.getElementById('forecast-data').checked;
+                const includeCurrent = document.getElementById('current-data').checked;
+                
+                generateCSV(includeHistorical, includeForecast, includeCurrent);
+                csvModal.style.display = 'none';
+            });
+
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === csvModal) {
+                    csvModal.style.display = 'none';
+                }
+            });
+        }
+
+        function generateCSV(includeHistorical, includeForecast, includeCurrent) {
+            let csvContent = "";
+            
+            // Add header
+            csvContent += "Date,Temperature (°C),Condition,Humidity (%),Wind Speed (km/h),Pressure (hPa)\r\n";
+            
+            // Generate historical data (15 days before)
+            if (includeHistorical) {
+                const today = new Date();
+                for (let i = 15; i > 0; i--) {
+                    const date = new Date();
+                    date.setDate(today.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    
+                    // Generate random historical data (in a real app, this would come from an API)
+                    const temp = Math.floor(Math.random() * 15) + 15; // 15-30°C
+                    const conditions = ['Sunny', 'Cloudy', 'Rainy', 'Partly Cloudy'];
+                    const condition = conditions[Math.floor(Math.random() * conditions.length)];
+                    const humidity = Math.floor(Math.random() * 40) + 40; // 40-80%
+                    const windSpeed = Math.floor(Math.random() * 20) + 5; // 5-25 km/h
+                    const pressure = Math.floor(Math.random() * 30) + 1000; // 1000-1030 hPa
+                    
+                    csvContent += `${dateStr},${temp},${condition},${humidity},${windSpeed},${pressure}\r\n`;
+                }
+            }
+            
+            // Add current weather data
+            if (includeCurrent) {
+                const today = new Date().toISOString().split('T')[0];
+                const temp = document.getElementById('temperature').textContent.replace('°C', '');
+                const condition = document.getElementById('weather-desc').textContent;
+                const humidity = document.getElementById('humidity').textContent.replace('%', '');
+                const windSpeed = document.getElementById('wind').textContent.replace(' km/h', '');
+                const pressure = document.getElementById('pressure').textContent.replace(' hPa', '');
+                
+                csvContent += `${today},${temp},${condition},${humidity},${windSpeed},${pressure}\r\n`;
+            }
+            
+            // Add forecast data
+            if (includeForecast && forecastData.length > 0) {
+                forecastData.slice(0, 7).forEach(day => {
+                    const date = new Date(day.dt * 1000);
+                    const dateStr = date.toISOString().split('T')[0];
+                    const temp = Math.round(day.temp.max);
+                    const condition = day.weather[0].main;
+                    const humidity = day.humidity;
+                    const windSpeed = Math.round(day.wind_speed * 3.6); // Convert m/s to km/h
+                    const pressure = day.pressure;
+                    
+                    csvContent += `${dateStr},${temp},${condition},${humidity},${windSpeed},${pressure}\r\n`;
+                });
+            }
+            
+            // Create download link using Blob method (more reliable)
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            const filename = `weather_data_${currentLocation.name.replace(/,/g, '').replace(/ /g, '_')}.csv`;
+            
+            link.href = url;
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
+    </script>
+</body>
+</html>
