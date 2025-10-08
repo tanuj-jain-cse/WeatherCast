@@ -110,4 +110,4 @@ REST_FRAMEWORK = {
     
 }
 
-WEATHER_API_KEY = "cfdccbd34d11e3a78970e4d64d64f4b5"
+WEATHER_API_KEY = "#############"
