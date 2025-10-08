@@ -4,14 +4,14 @@
 ---
 
 ## 📖 About the Project
-The **Weather Forecast Web App** is a smart weather website that provides **real-time weather updates** along with **7-day forecasts** using the **OpenWeather API**.  
+The **Weather Forecast Web App** is a smart weather website that provides **real-time weather updates** along with **7-day forecasts** using the **ARIMA**.  
 It features **location mapping**, **visual charts**, **precautionary tips**, and even **spiritual quotes** based on the weather.  
 
 ---
 
 ## ✨ Features
 - 🌍 Search any city for **current weather**  
-- 📅 Get **7-day weather forecast** (temperature, humidity, wind, precipitation)  
+- 📅 Get **7-day future weather forecast** (temperature, humidity, wind, precipitation)  
 - 🗺️ View searched location on an **interactive map**  
 - 📊 Weather data visualization with **graphs & charts**  
 - ⚠️ **Precautionary advice** (e.g., for rain, heatwave, storms, cold)  
@@ -23,7 +23,8 @@ It features **location mapping**, **visual charts**, **precautionary tips**, and
 ## 🛠️ Tech Stack
 - **Backend:** Django (Python)  
 - **Frontend:** HTML, CSS, JavaScript  
-- **API:** OpenWeather API  
+- **API:** OpenWeather API
+- **AIML:** ARIMA  
 - **Visualization:** JavaScript chart libraries (e.g., Chart.js / D3.js)  
 
 ---
